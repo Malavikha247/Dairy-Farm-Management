@@ -1,0 +1,658 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4 mb-5">
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+
+            <h2 class="fw-bold">
+                Farm Reports
+            </h2>
+
+            <p class="text-muted">
+                Dairy farm performance and health reports
+            </p>
+
+        </div>
+
+
+        {% if request.user.role == 'Vet' %}
+
+        <a
+            href="{% url 'vet_dashboard' %}"
+            class="btn btn-dark">
+
+            ← Vet Dashboard
+
+        </a>
+
+        {% else %}
+
+        <a
+            href="{% url 'admin_dashboard' %}"
+            class="btn btn-dark">
+
+            ← Admin Dashboard
+
+        </a>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- =====================================================
+         DATE FILTER
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-primary text-white">
+
+            <h5 class="mb-0">
+
+                Milk Production Filter
+
+            </h5>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <form method="GET">
+
+                <div class="row g-3">
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-bold">
+
+                            From Date
+
+                        </label>
+
+                        <input
+                            type="date"
+                            name="start_date"
+                            value="{{ start_date }}"
+                            class="form-control">
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-bold">
+
+                            To Date
+
+                        </label>
+
+                        <input
+                            type="date"
+                            name="end_date"
+                            value="{{ end_date }}"
+                            class="form-control">
+
+                    </div>
+
+
+                    <div class="col-md-4 d-flex align-items-end">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary me-2">
+
+                            Generate
+
+                        </button>
+
+
+                        <a
+                            href="{% url 'reports' %}"
+                            class="btn btn-secondary me-2">
+
+                            Clear
+
+                        </a>
+
+
+                        <a
+                            href="{% url 'download_report_pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}"
+                            class="btn btn-danger">
+
+                            PDF
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         SUMMARY
+    ====================================================== -->
+
+    <div class="row mb-4">
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card bg-warning shadow h-100">
+
+                <div class="card-body text-center">
+
+                    <h6>
+                        Total Milk
+                    </h6>
+
+                    <h2 class="fw-bold">
+
+                        {{ milk_total|floatformat:2 }} L
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card bg-info text-white shadow h-100">
+
+                <div class="card-body text-center">
+
+                    <h6>
+                        Average Milk
+                    </h6>
+
+                    <h2 class="fw-bold">
+
+                        {{ milk_average|floatformat:2 }} L
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card bg-success text-white shadow h-100">
+
+                <div class="card-body text-center">
+
+                    <h6>
+                        Total Cattle
+                    </h6>
+
+                    <h2 class="fw-bold">
+
+                        {{ total_cattle }}
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-3 mb-3">
+
+            <div class="card bg-danger text-white shadow h-100">
+
+                <div class="card-body text-center">
+
+                    <h6>
+                        Health Records
+                    </h6>
+
+                    <h2 class="fw-bold">
+
+                        {{ total_health_records }}
+
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         MILK PRODUCTION
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-white">
+
+            <h4 class="fw-bold">
+                Milk Production Report
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Cattle
+                            </th>
+
+                            <th>
+                                Breed
+                            </th>
+
+                            <th>
+                                Quantity
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for record in milk_records %}
+
+                        <tr>
+
+                            <td>
+                                {{ record.date }}
+                            </td>
+
+                            <td class="fw-bold">
+                                {{ record.cattle.tag_id }}
+                            </td>
+
+                            <td>
+                                {{ record.cattle.breed }}
+                            </td>
+
+                            <td>
+                                {{ record.quantity_liters }} L
+                            </td>
+
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="4"
+                                class="text-center text-muted">
+
+                                No milk records found.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CATTLE REPORT
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-white">
+
+            <h4 class="fw-bold">
+                Cattle Report
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Tag ID
+                            </th>
+
+                            <th>
+                                Breed
+                            </th>
+
+                            <th>
+                                Birth Date
+                            </th>
+
+                            <th>
+                                Health Status
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for cattle in cattle_records %}
+
+                        <tr>
+
+                            <td class="fw-bold">
+                                {{ cattle.tag_id }}
+                            </td>
+
+                            <td>
+                                {{ cattle.breed }}
+                            </td>
+
+                            <td>
+                                {{ cattle.birth_date }}
+                            </td>
+
+                            <td>
+
+                                <span class="badge bg-warning text-dark">
+
+                                    {{ cattle.health_status }}
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         HEALTH RECORD REPORT
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-4">
+
+        <div class="card-header bg-danger text-white">
+
+            <div class="d-flex justify-content-between align-items-center">
+
+                <h4 class="fw-bold mb-0">
+
+                    Veterinary Health Report
+
+                </h4>
+
+
+                <span class="badge bg-light text-danger">
+
+                    {{ total_health_records }} Records
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>
+                                Checkup Date
+                            </th>
+
+                            <th>
+                                Cattle
+                            </th>
+
+                            <th>
+                                Breed
+                            </th>
+
+                            <th>
+                                Diagnosis
+                            </th>
+
+                            <th>
+                                Treatment
+                            </th>
+
+                            <th>
+                                Veterinarian
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for record in health_records %}
+
+                        <tr>
+
+                            <td>
+                                {{ record.checkup_date }}
+                            </td>
+
+
+                            <td class="fw-bold">
+
+                                {{ record.cattle.tag_id }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ record.cattle.breed }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ record.diagnosis }}
+
+                            </td>
+
+
+                            <td>
+
+                                {{ record.treatment }}
+
+                            </td>
+
+
+                            <td>
+
+                                {% if record.vet_assigned %}
+
+                                    {{ record.vet_assigned.username }}
+
+                                {% else %}
+
+                                    Not Assigned
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+
+                        {% empty %}
+
+                        <tr>
+
+                            <td
+                                colspan="6"
+                                class="text-center py-5 text-muted">
+
+                                No health records available.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         INVENTORY
+    ====================================================== -->
+
+    <div class="card shadow-sm border-0 mb-5">
+
+        <div class="card-header bg-white">
+
+            <h4 class="fw-bold">
+                Inventory Report
+            </h4>
+
+        </div>
+
+
+        <div class="card-body">
+
+            <table class="table table-hover">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>
+                            Item
+                        </th>
+
+                        <th>
+                            Quantity
+                        </th>
+
+                        <th>
+                            Unit
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for item in inventory_records %}
+
+                    <tr>
+
+                        <td class="fw-bold">
+                            {{ item.item_name }}
+                        </td>
+
+                        <td>
+                            {{ item.quantity }}
+                        </td>
+
+                        <td>
+                            {{ item.unit }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
